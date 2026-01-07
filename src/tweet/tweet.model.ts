@@ -4,7 +4,7 @@ import {
   Sequelize,
   InferAttributes,
   InferCreationAttributes,
-  CreationOptional,
+  CreationOptional
 } from 'sequelize';
 import { User } from '../user/user.model';
 
@@ -49,6 +49,7 @@ export function initTweetModel(sequelize: Sequelize) {
       sequelize,
       tableName: 'tweets',
       timestamps: true,
+      underscored: true,
     },
   );
 }
