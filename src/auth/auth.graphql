@@ -1,0 +1,11 @@
+type Mutation {
+    login(
+        email: String!
+        password: String!
+    ): AuthPayload!
+}
+
+type AuthPayload {
+  user: User!
+  accessToken: String!
+}

@@ -1,0 +1,19 @@
+type Tweet {
+  tweetId: ID!
+  userId: ID!
+  tweetContent: String!
+  createdAt: String!
+  updatedAt: String!
+  user: User!
+}
+
+type Mutation {
+  createTweet(
+    tweetContent: String!
+  ): Tweet!
+}
+
+type Query {
+  listTweetsByUserId(userId: ID!): [Tweet!]!
+  listTweets: [Tweet!]!
+}
