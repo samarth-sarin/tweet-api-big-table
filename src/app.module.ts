@@ -20,7 +20,7 @@ import { RedisModule } from './redis/redis.module';
       driver: ApolloDriver,
       autoSchemaFile: false,
       typePaths: ['./src/**/*.graphql'],
-      playground: process.env.NODE_ENV !== 'production',
+      playground: true,
     }),
     RedisModule,
     LoaderModule,
