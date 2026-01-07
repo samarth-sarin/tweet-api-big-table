@@ -36,6 +36,8 @@ export class DatabaseModule implements OnModuleInit {
     User.hasMany(Tweet, { foreignKey: 'userId', as: 'tweets'});
 
     console.log('Syncing database...');
-    await this.sequelize.sync({ alter: true });
+    if (process.env.NODE_ENV !== 'production') {
+      await this.sequelize.sync({ alter: true });
+    }
   }
 }
