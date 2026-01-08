@@ -3,6 +3,7 @@ import { UseGuards } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import DataLoader from 'dataloader';
 import { TweetService } from './tweet.service';
+import { BigtableService } from '../bigtable/bigtable.service';
 import { Tweet } from './tweet.model';
 import { User } from '../user/user.model';
 import { UserService } from '../user/user.service';
@@ -15,6 +16,7 @@ export class TweetResolver {
   constructor(
     private readonly tweetService: TweetService,
     private readonly userService: UserService,
+    private readonly bigtableService: BigtableService,
     @Inject('USER_LOADER')
     private readonly userLoader: DataLoader<string, User>,
   ) {}
@@ -42,5 +44,19 @@ export class TweetResolver {
   @ResolveField(() => User)
   user(@Parent() tweet: Tweet) {
     return this.userLoader.load(tweet.userId);
+  }
+
+  @Query(() => [Tweet])
+  async listTweetsBigTable(@Args('userId') userId: string) {
+    const rows =
+      await this.bigtableService.readTweetsByUserId(userId);
+
+    // Map Bigtable rows → GraphQL Tweet type
+    return rows.map(r => ({
+      tweetId: r.tweetId,
+      userId: r.userId,
+      tweetContent: r.tweetContent,
+      createdAt: r.createdAt,
+    }));
   }
 }

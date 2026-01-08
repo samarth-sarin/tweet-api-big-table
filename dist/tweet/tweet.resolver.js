@@ -21,6 +21,7 @@ const common_1 = require("@nestjs/common");
 const common_2 = require("@nestjs/common");
 const dataloader_1 = __importDefault(require("dataloader"));
 const tweet_service_1 = require("./tweet.service");
+const bigtable_service_1 = require("../bigtable/bigtable.service");
 const tweet_model_1 = require("./tweet.model");
 const user_model_1 = require("../user/user.model");
 const user_service_1 = require("../user/user.service");
@@ -29,10 +30,12 @@ const current_user_decorator_1 = require("../auth/current-user.decorator");
 let TweetResolver = class TweetResolver {
     tweetService;
     userService;
+    bigtableService;
     userLoader;
-    constructor(tweetService, userService, userLoader) {
+    constructor(tweetService, userService, bigtableService, userLoader) {
         this.tweetService = tweetService;
         this.userService = userService;
+        this.bigtableService = bigtableService;
         this.userLoader = userLoader;
     }
     createTweet(user, tweetContent) {
@@ -47,6 +50,15 @@ let TweetResolver = class TweetResolver {
     }
     user(tweet) {
         return this.userLoader.load(tweet.userId);
+    }
+    async listTweetsBigTable(userId) {
+        const rows = await this.bigtableService.readTweetsByUserId(userId);
+        return rows.map(r => ({
+            tweetId: r.tweetId,
+            userId: r.userId,
+            tweetContent: r.tweetContent,
+            createdAt: r.createdAt,
+        }));
     }
 };
 exports.TweetResolver = TweetResolver;
@@ -79,11 +91,19 @@ __decorate([
     __metadata("design:paramtypes", [tweet_model_1.Tweet]),
     __metadata("design:returntype", void 0)
 ], TweetResolver.prototype, "user", null);
+__decorate([
+    (0, graphql_1.Query)(() => [tweet_model_1.Tweet]),
+    __param(0, (0, graphql_1.Args)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], TweetResolver.prototype, "listTweetsBigTable", null);
 exports.TweetResolver = TweetResolver = __decorate([
     (0, graphql_1.Resolver)(() => tweet_model_1.Tweet),
-    __param(2, (0, common_2.Inject)('USER_LOADER')),
+    __param(3, (0, common_2.Inject)('USER_LOADER')),
     __metadata("design:paramtypes", [tweet_service_1.TweetService,
         user_service_1.UserService,
+        bigtable_service_1.BigtableService,
         dataloader_1.default])
 ], TweetResolver);
 //# sourceMappingURL=tweet.resolver.js.map

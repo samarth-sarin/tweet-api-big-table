@@ -1,21 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Tweet } from './tweet.model';
-import { User } from '../user/user.model';
-import { UserService } from '../user/user.service';
+import { BigtableService } from '../bigtable/bigtable.service';
+
 
 @Injectable()
 export class TweetService {
   constructor(
     @InjectModel(Tweet)
     private readonly tweetModel: typeof Tweet,
+    private bigtableService: BigtableService,
   ) {}
 
   async createTweet(tweetContent: string, userId: string) {
-    return Tweet.create({
-      tweetContent: tweetContent,
-      userId: userId
+    const tweet = await this.tweetModel.create({
+      userId,
+      tweetContent,
     });
+
+    // fire-and-forget Bigtable write
+    this.bigtableService
+      .writeTweet({
+        tweetId: tweet.tweetId,
+        userId: tweet.userId,
+        tweetContent: tweet.tweetContent,
+        createdAt: tweet.createdAt,
+      })
+      .catch(err =>
+        console.error('Bigtable write failed', err),
+      );
+
+    return tweet;
   }
 
   async findByUserId(userId: string) {

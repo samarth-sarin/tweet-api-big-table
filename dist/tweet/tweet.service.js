@@ -16,16 +16,28 @@ exports.TweetService = void 0;
 const common_1 = require("@nestjs/common");
 const sequelize_1 = require("@nestjs/sequelize");
 const tweet_model_1 = require("./tweet.model");
+const bigtable_service_1 = require("../bigtable/bigtable.service");
 let TweetService = class TweetService {
     tweetModel;
-    constructor(tweetModel) {
+    bigtableService;
+    constructor(tweetModel, bigtableService) {
         this.tweetModel = tweetModel;
+        this.bigtableService = bigtableService;
     }
     async createTweet(tweetContent, userId) {
-        return tweet_model_1.Tweet.create({
-            tweetContent: tweetContent,
-            userId: userId
+        const tweet = await this.tweetModel.create({
+            userId,
+            tweetContent,
         });
+        this.bigtableService
+            .writeTweet({
+            tweetId: tweet.tweetId,
+            userId: tweet.userId,
+            tweetContent: tweet.tweetContent,
+            createdAt: tweet.createdAt,
+        })
+            .catch(err => console.error('Bigtable write failed', err));
+        return tweet;
     }
     async findByUserId(userId) {
         return this.tweetModel.findAll({
@@ -42,6 +54,6 @@ exports.TweetService = TweetService;
 exports.TweetService = TweetService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, sequelize_1.InjectModel)(tweet_model_1.Tweet)),
-    __metadata("design:paramtypes", [Object])
+    __metadata("design:paramtypes", [Object, bigtable_service_1.BigtableService])
 ], TweetService);
 //# sourceMappingURL=tweet.service.js.map

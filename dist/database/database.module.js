@@ -31,7 +31,9 @@ let DatabaseModule = class DatabaseModule {
         tweet_model_1.Tweet.belongsTo(user_model_1.User, { foreignKey: 'userId', as: 'user' });
         user_model_1.User.hasMany(tweet_model_1.Tweet, { foreignKey: 'userId', as: 'tweets' });
         console.log('Syncing database...');
-        await this.sequelize.sync({ alter: true });
+        if (process.env.NODE_ENV !== 'production') {
+            await this.sequelize.sync({ alter: true });
+        }
     }
 };
 exports.DatabaseModule = DatabaseModule;

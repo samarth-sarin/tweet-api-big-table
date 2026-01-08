@@ -12,14 +12,17 @@ services:
       - postgres_data:/var/lib/postgresql/data
   redis:
     image: redis:7-alpine
-    container_name: redis
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis-data:/data
-
-
+  bigtable:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
+    container_name: bigtable-emulator
+    command: gcloud beta emulators bigtable start --host-port=0.0.0.0:8086
+    ports:
+      - "8086:8086"
 volumes:
   postgres_data:
   redis-data:

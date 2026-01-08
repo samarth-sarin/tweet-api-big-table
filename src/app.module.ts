@@ -10,6 +10,8 @@ import { AuthModule } from './auth/auth.module';
 import { TweetModule } from './tweet/tweet.module';
 import { LoaderModule } from './loaders/loader.module';
 import { RedisModule } from './redis/redis.module';
+import { BigtableModule } from './bigtable/bigtable.module';
+
 
 @Module({
   imports: [
@@ -21,7 +23,9 @@ import { RedisModule } from './redis/redis.module';
       autoSchemaFile: false,
       typePaths: ['./src/**/*.graphql'],
       playground: true,
+      csrfPrevention: false, // 👈 optional (explained below)
     }),
+    BigtableModule,
     RedisModule,
     LoaderModule,
     UserModule,

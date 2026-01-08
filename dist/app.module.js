@@ -19,6 +19,7 @@ const auth_module_1 = require("./auth/auth.module");
 const tweet_module_1 = require("./tweet/tweet.module");
 const loader_module_1 = require("./loaders/loader.module");
 const redis_module_1 = require("./redis/redis.module");
+const bigtable_module_1 = require("./bigtable/bigtable.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -32,8 +33,10 @@ exports.AppModule = AppModule = __decorate([
                 driver: apollo_1.ApolloDriver,
                 autoSchemaFile: false,
                 typePaths: ['./src/**/*.graphql'],
-                playground: process.env.NODE_ENV !== 'production',
+                playground: true,
+                csrfPrevention: false,
             }),
+            bigtable_module_1.BigtableModule,
             redis_module_1.RedisModule,
             loader_module_1.LoaderModule,
             user_module_1.UserModule,

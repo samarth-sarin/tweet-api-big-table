@@ -52,7 +52,6 @@ export function initUserModel(sequelize: Sequelize) {
       sequelize,
       tableName: 'users',
       timestamps: true,
-      underscored: true,
     },
   );
 }

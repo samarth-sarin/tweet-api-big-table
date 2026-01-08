@@ -19,8 +19,9 @@ let RedisService = class RedisService {
     client;
     constructor() {
         this.client = new ioredis_1.default({
-            host: 'localhost',
-            port: 6379,
+            host: process.env.REDIS_HOST,
+            port: Number(process.env.REDIS_PORT),
+            maxRetriesPerRequest: null,
         });
     }
     getClient() {

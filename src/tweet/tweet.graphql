@@ -17,3 +17,8 @@ type Query {
   listTweetsByUserId(userId: ID!): [Tweet!]!
   listTweets: [Tweet!]!
 }
+
+type Query {
+  listTweetsBigTable(userId: ID!): [Tweet!]!
+  listTweets: [Tweet!]!
+}

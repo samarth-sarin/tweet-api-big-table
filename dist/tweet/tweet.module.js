@@ -14,6 +14,7 @@ const tweet_service_1 = require("./tweet.service");
 const tweet_resolver_1 = require("./tweet.resolver");
 const user_module_1 = require("../user/user.module");
 const loader_module_1 = require("../loaders/loader.module");
+const bigtable_module_1 = require("../bigtable/bigtable.module");
 let TweetModule = class TweetModule {
 };
 exports.TweetModule = TweetModule;
@@ -22,7 +23,8 @@ exports.TweetModule = TweetModule = __decorate([
         imports: [
             sequelize_1.SequelizeModule.forFeature([tweet_model_1.Tweet]),
             user_module_1.UserModule,
-            loader_module_1.LoaderModule
+            loader_module_1.LoaderModule,
+            bigtable_module_1.BigtableModule
         ],
         providers: [tweet_service_1.TweetService, tweet_resolver_1.TweetResolver,],
         exports: [tweet_service_1.TweetService],
