@@ -1,50 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Bigtable, Table } from '@google-cloud/bigtable';
 import { buildTweetRowKey } from './bigtable.util';
 import { BigtableTweet } from './bigtable.types';
 
 @Injectable()
-export class BigtableService {
-  private bigtable?: Bigtable;
-  private table?: Table;
-  private initialized = false;
+export class BigtableService implements OnModuleInit {
+  private bigtable!: Bigtable;
+  private table!: Table;
 
-  /**
-   * Lazily initialize Bigtable.
-   * Safe for Cloud Run (no work at cold start).
-   */
-  private async initIfNeeded(): Promise<void> {
-    if (this.initialized) return;
-
+  async onModuleInit() {
     const projectId = process.env.GCP_PROJECT_ID;
     const instanceId = process.env.BIGTABLE_INSTANCE_ID;
 
     if (!projectId || !instanceId) {
-      console.warn('[Bigtable] Not configured, skipping initialization');
-      return;
+      throw new Error(
+        'Bigtable is not configured. Set GCP_PROJECT_ID and BIGTABLE_INSTANCE_ID.',
+      );
     }
+
+    console.log('[Bigtable] Initializing client…');
 
     this.bigtable = new Bigtable({ projectId });
 
     const instance = this.bigtable.instance(instanceId);
     this.table = instance.table('tweets');
 
-    this.initialized = true;
-    console.log('[Bigtable] Initialized');
+    // 🔎 Light connectivity check (no admin calls)
+    await this.table.exists();
+
+    console.log('[Bigtable] Connected and ready');
   }
 
-  /**
-   * Write a tweet row (fire-and-forget friendly, but awaitable).
-   */
   async writeTweet(tweet: {
     tweetId: string;
     userId: string;
     tweetContent: string;
     createdAt: Date;
   }): Promise<void> {
-    await this.initIfNeeded();
-    if (!this.table) return;
-
     const rowKey = buildTweetRowKey(
       tweet.userId,
       tweet.createdAt,
@@ -63,16 +55,10 @@ export class BigtableService {
     });
   }
 
-  /**
-   * Read tweets for a user (ordered by reverse timestamp via row key).
-   */
   async readTweetsByUserId(
     userId: string,
     limit = 50,
   ): Promise<BigtableTweet[]> {
-    await this.initIfNeeded();
-    if (!this.table) return [];
-
     const prefix = `${userId}#`;
 
     const [rows] = await this.table.getRows({
@@ -96,6 +82,6 @@ export class BigtableService {
           ),
         };
       })
-      .filter((row): row is BigtableTweet => row !== null);
+      .filter((r): r is BigtableTweet => r !== null);
   }
 }
