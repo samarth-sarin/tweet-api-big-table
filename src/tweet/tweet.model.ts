@@ -49,6 +49,7 @@ export function initTweetModel(sequelize: Sequelize) {
       sequelize,
       tableName: 'tweets',
       timestamps: true,
+      underscored: true,
     },
   );
 }
