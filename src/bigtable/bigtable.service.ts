@@ -37,6 +37,9 @@ export class BigtableService {
     tweetContent: string;
     createdAt: Date;
   }) {
+    await this.initIfNeeded();
+    if (!this.table) return [];
+    
     const rowKey = buildTweetRowKey(
       tweet.userId,
       tweet.createdAt,
@@ -56,6 +59,9 @@ export class BigtableService {
   }
 
   async readTweetsByUserId(userId: string, limit = 50) {
+        await this.initIfNeeded();
+        if (!this.table) return [];
+
         const prefix = `${userId}#`;
 
         const [result] = await this.table.getRows({
