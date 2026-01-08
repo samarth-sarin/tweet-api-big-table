@@ -18,17 +18,12 @@ export class TweetService {
       tweetContent,
     });
 
-    // fire-and-forget Bigtable write
-    this.bigtableService
-      .writeTweet({
+    await this.bigtableService.writeTweet({
         tweetId: tweet.tweetId,
         userId: tweet.userId,
         tweetContent: tweet.tweetContent,
         createdAt: tweet.createdAt,
-      })
-      .catch(err =>
-        console.error('Bigtable write failed', err),
-      );
+    });
 
     return tweet;
   }

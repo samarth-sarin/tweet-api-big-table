@@ -1,49 +1,54 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Bigtable, Table } from '@google-cloud/bigtable';
 import { buildTweetRowKey } from './bigtable.util';
 import { BigtableTweet } from './bigtable.types';
 
 @Injectable()
 export class BigtableService {
-  private bigtable!: Bigtable;
-  private table!: Table;
+  private bigtable?: Bigtable;
+  private table?: Table;
   private initialized = false;
 
-  async initIfNeeded() {
+  /**
+   * Lazily initialize Bigtable.
+   * Safe for Cloud Run (no work at cold start).
+   */
+  private async initIfNeeded(): Promise<void> {
     if (this.initialized) return;
 
-    if (!process.env.BIGTABLE_INSTANCE_ID) {
-      console.warn('Bigtable not configured, skipping');
+    const projectId = process.env.GCP_PROJECT_ID;
+    const instanceId = process.env.BIGTABLE_INSTANCE_ID;
+
+    if (!projectId || !instanceId) {
+      console.warn('[Bigtable] Not configured, skipping initialization');
       return;
     }
 
-    this.bigtable = new Bigtable({
-      projectId: process.env.GCP_PROJECT_ID,
-    });
+    this.bigtable = new Bigtable({ projectId });
 
-    const instance = this.bigtable.instance(
-      process.env.BIGTABLE_INSTANCE_ID,
-    );
-
+    const instance = this.bigtable.instance(instanceId);
     this.table = instance.table('tweets');
-    this.initialized = true;
 
-    console.log('Bigtable initialized');
+    this.initialized = true;
+    console.log('[Bigtable] Initialized');
   }
 
+  /**
+   * Write a tweet row (fire-and-forget friendly, but awaitable).
+   */
   async writeTweet(tweet: {
     tweetId: string;
     userId: string;
     tweetContent: string;
     createdAt: Date;
-  }) {
+  }): Promise<void> {
     await this.initIfNeeded();
-    if (!this.table) return [];
-    
+    if (!this.table) return;
+
     const rowKey = buildTweetRowKey(
       tweet.userId,
       tweet.createdAt,
-      tweet.tweetId
+      tweet.tweetId,
     );
 
     await this.table.insert({
@@ -58,32 +63,39 @@ export class BigtableService {
     });
   }
 
-  async readTweetsByUserId(userId: string, limit = 50) {
-        await this.initIfNeeded();
-        if (!this.table) return [];
+  /**
+   * Read tweets for a user (ordered by reverse timestamp via row key).
+   */
+  async readTweetsByUserId(
+    userId: string,
+    limit = 50,
+  ): Promise<BigtableTweet[]> {
+    await this.initIfNeeded();
+    if (!this.table) return [];
 
-        const prefix = `${userId}#`;
+    const prefix = `${userId}#`;
 
-        const [result] = await this.table.getRows({
-            prefix,
-            limit,
-        });
-        
-        const rows: BigtableTweet[] = [];
+    const [rows] = await this.table.getRows({
+      prefix,
+      limit,
+    });
 
-        for (const row of result) {
-            const data = row.data.t;
-            const [, , tweetId] = row.id.split('#');
+    return rows
+      .map(row => {
+        const data = row.data?.t;
+        if (!data) return null;
 
-            rows.push({
-                tweetId,
-                userId: data.user_id[0].value.toString(),
-                tweetContent: data.content[0].value.toString(),
-                createdAt: new Date(data.created_at[0].value.toString()),
-            });
-        }
+        const [, , tweetId] = row.id.split('#');
 
-        return rows;
+        return {
+          tweetId,
+          userId: data.user_id?.[0]?.value?.toString() ?? '',
+          tweetContent: data.content?.[0]?.value?.toString() ?? '',
+          createdAt: new Date(
+            data.created_at?.[0]?.value?.toString() ?? 0,
+          ),
+        };
+      })
+      .filter((row): row is BigtableTweet => row !== null);
   }
-
 }
