@@ -4,33 +4,31 @@ import { buildTweetRowKey } from './bigtable.util';
 import { BigtableTweet } from './bigtable.types';
 
 @Injectable()
-export class BigtableService implements OnModuleInit {
+export class BigtableService {
   private bigtable!: Bigtable;
   private table!: Table;
-  
+  private initialized = false;
 
-  async onModuleInit() {
+  async initIfNeeded() {
+    if (this.initialized) return;
+
+    if (!process.env.BIGTABLE_INSTANCE_ID) {
+      console.warn('Bigtable not configured, skipping');
+      return;
+    }
+
     this.bigtable = new Bigtable({
-      projectId: process.env.BIGTABLE_PROJECT_ID,
+      projectId: process.env.GCP_PROJECT_ID,
     });
 
-    console.log('Bigtable client initialized');
-
     const instance = this.bigtable.instance(
-      process.env.BIGTABLE_INSTANCE_ID!,
+      process.env.BIGTABLE_INSTANCE_ID,
     );
 
     this.table = instance.table('tweets');
+    this.initialized = true;
 
-    const [exists] = await this.table.exists();
-    if (!exists) {
-      await this.table.create({
-        families: [{ name: 't' }],
-      });
-      console.log('Bigtable table "tweets" created');
-    }
-
-    console.log('Bigtable ready');
+    console.log('Bigtable initialized');
   }
 
   async writeTweet(tweet: {
