@@ -37,22 +37,32 @@ export class BigtableService implements OnModuleInit {
     tweetContent: string;
     createdAt: Date;
   }): Promise<void> {
-    const rowKey = buildTweetRowKey(
-      tweet.userId,
-      tweet.createdAt,
-      tweet.tweetId,
-    );
-
     await this.table.insert({
-      key: rowKey,
+      key: tweet.tweetId,
       data: {
         t: {
+          tweet_id: tweet.tweetId,
           user_id: tweet.userId,
           content: tweet.tweetContent,
           created_at: tweet.createdAt.toISOString(),
         },
       },
     });
+  }
+
+  async readTweetById(tweetId: string): Promise<BigtableTweet | null> {
+    const [row] = await this.table.row(tweetId).get().catch(() => [null]);
+
+    if (!row) return null;
+
+    const data = row.data.t;
+
+    return {
+      tweetId,
+      userId: data.user_id[0].value.toString(),
+      tweetContent: data.content[0].value.toString(),
+      createdAt: new Date(data.created_at[0].value.toString()),
+    };
   }
 
   async readTweetsByUserId(

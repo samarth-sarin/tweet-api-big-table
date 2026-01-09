@@ -16,6 +16,7 @@ type Mutation {
 type Query {
   listTweetsByUserId(userId: ID!): [Tweet!]!
   listTweets: [Tweet!]!
+  findTweet: [Tweet!]!
 }
 
 type Query {
