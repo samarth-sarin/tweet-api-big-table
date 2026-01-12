@@ -6,7 +6,8 @@ import { BigtableTweet } from './bigtable.types';
 @Injectable()
 export class BigtableService implements OnModuleInit {
   private bigtable!: Bigtable;
-  private table!: Table;
+  private tweetTable!: Table;
+  private userIdViewTable!: Table;
 
   async onModuleInit() {
     const projectId = process.env.GCP_PROJECT_ID;
@@ -23,10 +24,11 @@ export class BigtableService implements OnModuleInit {
     this.bigtable = new Bigtable({ projectId });
 
     const instance = this.bigtable.instance(instanceId);
-    this.table = instance.table('tweets');
+    this.tweetTable = instance.table('tweets');
+    this.userIdViewTable = instance.table('user_id_view');
 
     // 🔎 Light connectivity check (no admin calls)
-    await this.table.exists();
+    await this.tweetTable.exists();
 
     console.log('[Bigtable] Connected and ready');
   }
@@ -37,7 +39,7 @@ export class BigtableService implements OnModuleInit {
     tweetContent: string;
     createdAt: Date;
   }): Promise<void> {
-    await this.table.insert({
+    await this.tweetTable.insert({
       key: tweet.tweetId,
       data: {
         t: {
@@ -51,7 +53,7 @@ export class BigtableService implements OnModuleInit {
   }
 
   async readTweetById(tweetId: string): Promise<BigtableTweet | null> {
-    const [row] = await this.table.row(tweetId).get().catch(() => [null]);
+    const [row] = await this.tweetTable.row(tweetId).get().catch(() => [null]);
 
     if (!row) return null;
 
@@ -65,33 +67,21 @@ export class BigtableService implements OnModuleInit {
     };
   }
 
-  async readTweetsByUserId(
+  async readTweetIdsByUserId(
     userId: string,
     limit = 50,
-  ): Promise<BigtableTweet[]> {
-    const prefix = `${userId}#`;
-
-    const [rows] = await this.table.getRows({
-      prefix,
+  ): Promise<string[]> {
+    const [rows] = await this.userIdViewTable.getRows({
+      prefix: userId,
       limit,
     });
 
-    return rows
-      .map(row => {
-        const data = row.data?.t;
-        if (!data) return null;
-
-        const [, , tweetId] = row.id.split('#');
-
-        return {
-          tweetId,
-          userId: data.user_id?.[0]?.value?.toString() ?? '',
-          tweetContent: data.content?.[0]?.value?.toString() ?? '',
-          createdAt: new Date(
-            data.created_at?.[0]?.value?.toString() ?? 0,
-          ),
-        };
-      })
-      .filter((r): r is BigtableTweet => r !== null);
+    return rows.map(row => {
+      // Row key format:
+      // userId#created_at#tweetId
+      const parts = row.id.split('#');
+      return parts[2];
+    });
   }
+
 }

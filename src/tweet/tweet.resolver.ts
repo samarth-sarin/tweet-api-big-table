@@ -86,18 +86,10 @@ export class TweetResolver {
   // Bigtable scan (disabled)
   // --------------------
 
-  /*
-  @Query(() => [Tweet])
-  async listTweetsBigTable(@Args('userId') userId: string) {
-    const rows =
-      await this.bigtableService.readTweetsByUserId(userId);
-
-    return rows.map(r => ({
-      tweetId: r.tweetId,
-      userId: r.userId,
-      tweetContent: r.tweetContent,
-      createdAt: r.createdAt,
-    }));
+  @Query(() => [String])
+  async tweetIdsByUserId(
+    @Args('userId') userId: string,
+  ) {
+    return this.bigtableService.readTweetIdsByUserId(userId);
   }
-  */
 }

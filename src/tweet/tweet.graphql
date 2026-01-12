@@ -17,6 +17,7 @@ type Query {
   listTweetsByUserId(userId: ID!): [Tweet!]!
   listTweets: [Tweet!]!
   findTweet(tweetId: ID!): Tweet
+  tweetIdsByUserId(userId: ID!): [ID!]!
 }
 
 type Query {
