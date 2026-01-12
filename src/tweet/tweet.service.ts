@@ -30,7 +30,7 @@ async createTweet(tweetContent: string, userId: string) {
 }
 
   async findByUserId(userId: string) {
-    return await this.bigtableService.readTweetsByUserId(userId);
+    return await this.bigtableService.readTweetIdsByUserId(userId);
   }
 
   async findAll(): Promise<Tweet[]> {
