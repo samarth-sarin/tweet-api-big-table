@@ -25,7 +25,7 @@ export class BigtableService implements OnModuleInit {
 
     const instance = this.bigtable.instance(instanceId);
     this.tweetTable = instance.table('tweets');
-    this.userIdViewTable = instance.table('user_id_view');
+    this.userIdViewTable = instance.table('materializedViews/user_id_view');
 
     // 🔎 Light connectivity check (no admin calls)
     await this.tweetTable.exists();
@@ -83,5 +83,4 @@ export class BigtableService implements OnModuleInit {
       return parts[2];
     });
   }
-
 }
